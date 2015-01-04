@@ -1,11 +1,11 @@
-# A "Dynamic Assembler" for Rust
+# A "Dynamic Assembler" for rust
 
-This is a very experimental project. Goals:
+This is a very experimental project. The current goals are:
 
 - Find a way to encode assembly instructions directly in the host language (rust).
 - Provide lazy functions with on-demand compilation.
-- Allow functions re-compilation, for further otptimization.
-- Provide more high level features to build a JIT (at least registers allocation).
+- Allow functions re-compilation, for further optimization.
+- Provide more high level features to build a JIT Compiler (at least registers allocation).
 
 > NOTE: the opcode support is far from complete (it currently only provides encoders for a few opcodes and addressing modes that useful enough to work on other aspects of the assembler) 
 
