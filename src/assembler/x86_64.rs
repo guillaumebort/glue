@@ -1,8 +1,8 @@
 use std::ops;
 use std::fmt;
-use std::io::extensions;
+use std::old_io::extensions;
 
-#[deriving(Clone,Show)]
+#[derive(Clone,Debug)]
 #[allow(non_camel_case_types)]
 #[allow(dead_code)]
 pub enum Register {
@@ -12,7 +12,7 @@ pub enum Register {
   al, bl, cl, dl, ah, ch, dh, bh, r8l, r9l, r10l, r11l, r12l, r13l, r14l, r15l
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum Operand {
   RegisterDirect(Register), // r64
   MemoryDirect(u64), // [imm64]
@@ -28,27 +28,27 @@ impl fmt::Show for Operand {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     use std::num;
     match self {
-      &RegisterDirect(reg) => write!(f, "{}", reg),
-      &MemoryDirect(disp) => write!(f, "[0x{:x}]", disp),
-      &MemoryRegisterIndirect(reg) => write!(f, "[{}]", reg),
-      &MemoryBased(reg, disp) if disp == 0 => write!(f, "[{}]", reg),
-      &MemoryBased(reg, disp) if disp < 0 => write!(f, "[{} - {}]", reg, num::abs(disp)),
-      &MemoryBased(reg, disp) => write!(f, "[{} + {}]", reg, num::abs(disp)),
-      &MemoryBasedIndexed(reg1, reg2, disp) if disp == 0 => write!(f, "[{} + {}]", reg1, reg2),
-      &MemoryBasedIndexed(reg1, reg2, disp) if disp < 0 => write!(f, "[{} + {} - {}]", reg1, reg2, num::abs(disp)),
-      &MemoryBasedIndexed(reg1, reg2, disp) => write!(f, "[{} + {} + {}]", reg1, reg2, num::abs(disp)),
-      &MemoryIndexed(reg, scale, disp) if disp == 0 => write!(f, "[{} * {}]", reg, scale),
-      &MemoryIndexed(reg, scale, disp) if disp < 0 => write!(f, "[{} * {} - {}]", reg, scale, num::abs(disp)),
-      &MemoryIndexed(reg, scale, disp) => write!(f, "[{} * {} + {}]", reg, scale, num::abs(disp)),
-      &MemoryBasedIndexedScale(reg1, reg2, scale, disp) if disp == 0 => write!(f, "[{} + {} * {}]", reg1, reg2, scale),
-      &MemoryBasedIndexedScale(reg1, reg2, scale, disp) if disp < 0 => write!(f, "[{} + {} * {} - {}]", reg1, reg2, scale, num::abs(disp)),
-      &MemoryBasedIndexedScale(reg1, reg2, scale, disp) => write!(f, "[{} + {} * {} + {}]", reg1, reg2, scale, num::abs(disp)),
-      &Immediate(v, _) => write!(f, "0x{:x}", v)
+      &Operand::RegisterDirect(reg) => write!(f, "{}", reg),
+      &Operand::MemoryDirect(disp) => write!(f, "[0x{:x}]", disp),
+      &Operand::MemoryRegisterIndirect(reg) => write!(f, "[{}]", reg),
+      &Operand::MemoryBased(reg, disp) if disp == 0 => write!(f, "[{}]", reg),
+      &Operand::MemoryBased(reg, disp) if disp < 0 => write!(f, "[{} - {}]", reg, num::abs(disp)),
+      &Operand::MemoryBased(reg, disp) => write!(f, "[{} + {}]", reg, num::abs(disp)),
+      &Operand::MemoryBasedIndexed(reg1, reg2, disp) if disp == 0 => write!(f, "[{} + {}]", reg1, reg2),
+      &Operand::MemoryBasedIndexed(reg1, reg2, disp) if disp < 0 => write!(f, "[{} + {} - {}]", reg1, reg2, num::abs(disp)),
+      &Operand::MemoryBasedIndexed(reg1, reg2, disp) => write!(f, "[{} + {} + {}]", reg1, reg2, num::abs(disp)),
+      &Operand::MemoryIndexed(reg, scale, disp) if disp == 0 => write!(f, "[{} * {}]", reg, scale),
+      &Operand::MemoryIndexed(reg, scale, disp) if disp < 0 => write!(f, "[{} * {} - {}]", reg, scale, num::abs(disp)),
+      &Operand::MemoryIndexed(reg, scale, disp) => write!(f, "[{} * {} + {}]", reg, scale, num::abs(disp)),
+      &Operand::MemoryBasedIndexedScale(reg1, reg2, scale, disp) if disp == 0 => write!(f, "[{} + {} * {}]", reg1, reg2, scale),
+      &Operand::MemoryBasedIndexedScale(reg1, reg2, scale, disp) if disp < 0 => write!(f, "[{} + {} * {} - {}]", reg1, reg2, scale, num::abs(disp)),
+      &Operand::MemoryBasedIndexedScale(reg1, reg2, scale, disp) => write!(f, "[{} + {} * {} + {}]", reg1, reg2, scale, num::abs(disp)),
+      &Operand::Immediate(v, _) => write!(f, "0x{:x}", v)
     }
   }
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub enum Instruction {
   Add(Operand,Operand),
   Mov(Operand,Operand),
@@ -60,7 +60,7 @@ pub enum Instruction {
 impl Instruction {
   pub fn to_opcode(&self) -> OpCode {
 
-    let missing_encoder = || fail!("Missing encoder for {}", self);
+    let missing_encoder = || panic!("Missing encoder for {}", self);
 
     let encode_rex = |size:uint, r1_extended:Option<bool>, r2_extended:Option<bool>| -> Option<u8> {
       let mut rex = 0b01000000u8;
@@ -225,13 +225,13 @@ impl Parameter for u8 {
   }
 }
 
-impl Parameter for [Register, ..1] {
+impl Parameter for [Register; 1] {
   fn to_operand(&self) -> Operand { 
     MemoryRegisterIndirect(self[0]) 
   }
 }
 
-impl Parameter for [u64, ..1] {
+impl Parameter for [u64; 1] {
   fn to_operand(&self) -> Operand { 
     MemoryDirect(self[0]) 
   }
@@ -250,7 +250,7 @@ impl<A> Parameter for *const A {
   }
 }
 
-impl Parameter for [Operand, ..1] {
+impl Parameter for [Operand; 1] {
   fn to_operand(&self) -> Operand {
     self[0]
   }
@@ -282,7 +282,7 @@ impl RegisterRhs<Operand> for Operand {
   fn add_to_register(&self, lhs: &Register) -> Operand {
     match self {
       &MemoryIndexed(index, scale, disp) => MemoryBasedIndexedScale(*lhs, index, scale, disp),
-      _ => fail!("Unsupported operation {} + {}", lhs, self)
+      _ => panic!("Unsupported operation {} + {}", lhs, self)
     }
   }
 }
@@ -299,7 +299,7 @@ impl ops::Add<int, Operand> for Operand  {
       &MemoryBasedIndexed(base, index, disp) => MemoryBasedIndexed(base, index, disp + *rhs as i64),
       &MemoryIndexed(index, scale, disp) => MemoryIndexed(index, scale, disp + *rhs as i64),
       &MemoryBasedIndexedScale(base, index, scale, disp) => MemoryBasedIndexedScale(base, index, scale, disp + *rhs as i64),
-      _ => fail!("Unsupported operation {} + {}", self, rhs)
+      _ => panic!("Unsupported operation {} + {}", self, rhs)
     }
   }
 }
@@ -310,7 +310,7 @@ impl ops::Sub<int, Operand> for Operand  {
       &MemoryBasedIndexed(base, index, disp) => MemoryBasedIndexed(base, index, disp - *rhs as i64),
       &MemoryIndexed(index, scale, disp) => MemoryIndexed(index, scale, disp - *rhs as i64),
       &MemoryBasedIndexedScale(base, index, scale, disp) => MemoryBasedIndexedScale(base, index, scale, disp - *rhs as i64),
-      _ => fail!("Unsupported operation {} - {}", self, rhs)
+      _ => panic!("Unsupported operation {} - {}", self, rhs)
     }
   }
 }
@@ -319,7 +319,7 @@ impl ops::Mul<uint, Operand> for Register  {
   fn mul(&self, rhs: &uint) -> Operand {
     match *rhs {
       1 | 2 | 4 | 8 => MemoryIndexed(*self, *rhs as u8, 0),
-      _ => fail!("Scaling factor must be either 1|2|4|8")
+      _ => panic!("Scaling factor must be either 1|2|4|8")
     }
     
   }
@@ -451,7 +451,7 @@ mod tests {
     let actual_bytes = insn.to_opcode().bytes;
 
     if actual_bytes.as_slice() != expected_bytes {
-      fail!("Wrong encoding for {}\nExpected {}, actually {}", insn, expected_bytes, actual_bytes.as_slice())
+      panic!("Wrong encoding for {}\nExpected {}, actually {}", insn, expected_bytes, actual_bytes.as_slice())
     }
   }
 
