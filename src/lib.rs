@@ -8,7 +8,7 @@ use std::os;
 use std::ptr;
 use std::mem;
 use std::sync::Arc;
-use std::sync::RWLock;
+use std::sync::RwLock;
 use std::collections::HashMap;
 
 #[cfg(target_arch = "x86_64")]
@@ -43,7 +43,8 @@ impl JitFunction {
           for byte in op_code.bytes.slice(l * 7, std::cmp::min((l + 1) * 7, bytes_len)).iter() {
             bytes.push_str(format!("{:02x} ", *byte).as_slice());
           }
-          string.push_str(format!("\t{:016x}:\t{:24s}", address, bytes).as_slice());
+          /* string.push_str(format!("\t{:016x}:\t{:24s}", address, bytes).as_slice()); */
+          string.push_str(format!("\t{:016x}:", address).as_slice());
           if l == 0 {
             string.push_str(format!("{}", op_code).as_slice());
           }
@@ -72,13 +73,13 @@ impl JitFunction {
   }
 
   pub fn lazy(self, compiler: fn (&mut JitFunction) -> ()) -> *const u8 {
-    fail!()
+    panic!()
   }
 
 }
 
 pub struct Jit {
-  internal: RWLock<JitInternal>
+  internal: RwLock<JitInternal>
 }
 
 static PAGE_SIZE: uint = 4096;
@@ -87,7 +88,7 @@ impl Jit {
 
   pub fn new() -> Arc<Jit> {
     Arc::new(Jit {
-      internal: RWLock::new(JitInternal {
+      internal: RwLock::new(JitInternal {
         memory_pages: vec![MemoryRegion::new(PAGE_SIZE)],
         call_sites: HashMap::new()
       })
@@ -121,7 +122,7 @@ impl JitFactory for Arc<Jit> {
   fn create_function(&self, name: String) -> JitFunction {
     let mut jit_internal = self.internal.write();
     if jit_internal.call_sites.contains_key(&name) {
-      fail!("Jit Function {} already defined", name)
+      panic!("Jit Function {} already defined", name)
     }
     jit_internal.call_sites.insert(name.clone(), 0 as *mut u8);
     JitFunction {
@@ -134,7 +135,7 @@ impl JitFactory for Arc<Jit> {
 }
 
 fn trampoline() -> Vec<Instruction> {
-  fail!()
+  panic!()
 }
 
 struct MemoryRegion {
@@ -146,7 +147,7 @@ impl MemoryRegion {
 
   fn new(bytes: uint) -> MemoryRegion {
     MemoryRegion {
-      mem: os::MemoryMap::new(bytes, [os::MapReadable, os::MapWritable, os::MapExecutable]).unwrap(),
+      mem: os::MemoryMap::new(bytes, [os::MapOption::MapReadable, os::MapOption::MapWritable, os::MapOption::MapExecutable]).unwrap(),
       allocation_pointer: 0
     }
   }
@@ -159,7 +160,7 @@ impl MemoryRegion {
     let ptr = self.mem.data().offset(self.allocation_pointer as int);
     self.allocation_pointer += bytes;
     if self.allocation_pointer > self.mem.len() {
-      fail!()
+      panic!()
     }
     ptr
   }

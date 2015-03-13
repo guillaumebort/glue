@@ -6,7 +6,7 @@ macro_rules! jit_fn (
       f
     }
   )
-)
+);
 
 macro_rules! jit_lazy_fn (
   ($jit_function:ident, ($($arg_type:ty),*) -> $return_type:ty, $jit_compiler:ident) => (
@@ -15,4 +15,4 @@ macro_rules! jit_lazy_fn (
       f
     }
   )
-)
+);
