@@ -1,6 +1,6 @@
 # A "Dynamic Assembler" for rust
 
-This is a very experimental project. The current goals are:
+This is a very experimental project. Some more idea to explore:
 
 - Find a way to encode assembly instructions directly in the host language (rust).
 - Provide lazy functions with on-demand compilation.
